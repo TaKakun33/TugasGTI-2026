@@ -1,0 +1,9 @@
+windows
+
+g++ -o maze3d game.cpp enemy.cpp weapon.cpp renderer.cpp -lglut -lGLU -lGL -lm
+./maze3d
+
+mac
+
+g++ -o maze3d game.cpp enemy.cpp weapon.cpp renderer.cpp -framework GLUT -framework OpenGL -framework Cocoa
+./maze3d
