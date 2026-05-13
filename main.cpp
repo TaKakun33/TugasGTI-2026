@@ -1,13 +1,15 @@
-// cara compile di linux dan windows
-// compile linux : g++ maze3d_final.cpp -o maze3d -lGL -lGLU -lglut -std=c++11
-// compile win   : g++ maze3d_final.cpp -o maze3d.exe -lfreeglut -lopengl32 -lglu32 -std=c++11
-
 // include glut sesuai platform
 #ifdef _WIN32
-#include <windows.h>
-#include <GL/freeglut.h>
+    #include <windows.h>
+    #include <GL/freeglut.h>
+#elif __APPLE__
+    #include <GLUT/glut.h>
+    #include <OpenGL/gl.h>
+    #include <OpenGL/glu.h>
 #else
-#include <GL/glut.h>
+    #include <GL/glut.h>
+    #include <GL/gl.h>
+    #include <GL/glu.h>
 #endif
 
 #include <cmath>
@@ -50,8 +52,9 @@ static float camX  = 1.5f * CELL;
 static float camZ  = 1.5f * CELL;
 static float camY  = WALL_H * 0.45f;
 static float angle = 90.0f;
-static float moveSpeed = 0.16f;  
-static float turnSpeed  = 5.0f;
+static float moveSpeed = 0.16f; 
+static float turnSpeed  = 3.0f;
+
 static int showMap = 1;
 static int WIN_W = 960, WIN_H = 600;
 
@@ -89,6 +92,9 @@ static int playerMaxHP = 5;
 static float screenFlash = 0.0f;
 static int gameOver    = 0;
 
+// held-keys array untuk smooth movement
+static bool keys[256] = {};
+
 // cek apakah sel (mx,mz) adalah dinding
 static inline int isWall(int mx, int mz) {
     if (mx < 0 || mx >= MAP_W || mz < 0 || mz >= MAP_H) return 1;
@@ -104,7 +110,7 @@ static int hasLineOfSight(float ax, float az, float bx, float bz) {
     float dist = sqrtf(dx*dx + dz*dz);
     int steps = (int)(dist / (CELL * 0.25f)) + 1;
     for (int i = 1; i < steps; i++) {
-        float t = (float)i / steps;
+        float t  = (float)i / steps;
         float tx = ax + dx * t;
         float tz = az + dz * t;
         if (isWall(worldToCell(tx), worldToCell(tz))) return 0;
@@ -551,7 +557,7 @@ static void drawHUD(int winW, int winH) {
 
     // teks bantuan kontrol
     glColor4f(0.9f,0.9f,0.7f,1); glRasterPos2i(8,10);
-    const char*hint="[W/S] Maju/Mundur  [A/D] Putar  [M] Minimap  [SPACE/LMB] Tembak  [R] Restart";
+    const char*hint="[W/S] Maju/Mundur  [A/D] Putar  [M] Minimap  [SPACE/LMB] Tembak  [R] Restart  [ESC/Q] Keluar";
     for(const char*c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13,*c);
 
     // crosshair di tengah layar
@@ -590,6 +596,8 @@ static void resetGame(void) {
     camX=1.5f*CELL; camZ=1.5f*CELL; angle=90;
     playerHP=playerMaxHP; screenFlash=0; gameOver=0;
     gunFiring=0; gunFrame=0; gunCooldown=0;
+    // clear semua keys saat restart
+    for(int i=0;i<256;i++) keys[i]=false;
     initEnemies();
 }
 
@@ -642,21 +650,19 @@ static void triggerShoot(void){
     }
 }
 
-// input keyboard
+// input keyboard — hanya catat tombol ditekan, tidak langsung gerak
 static void keyboard(unsigned char key,int,int){
+    keys[key] = true;
+    // keluar game dengan tombol ESC atau Q
+    if(key==27||key=='q'||key=='Q'){exit(0);}
     if(key=='r'||key=='R'){resetGame();return;}
-    if(gameOver) return;
-    float rad=DEG2RAD(angle),nx=camX,nz=camZ;
-    switch(key){
-        case 'w':case 'W': nx+=cosf(rad)*moveSpeed; nz+=sinf(rad)*moveSpeed; break;
-        case 's':case 'S': nx-=cosf(rad)*moveSpeed; nz-=sinf(rad)*moveSpeed; break;
-        case 'a':case 'A': angle-=turnSpeed; break;
-        case 'd':case 'D': angle+=turnSpeed; break;
-        case 'm':case 'M': showMap=!showMap; break;
-        case ' ': triggerShoot(); break;
-    }
-    if(canMove(nx,nz)){camX=nx;camZ=nz;}
-    glutPostRedisplay();
+    if(key=='m'||key=='M') showMap=!showMap;
+    if(key==' '&&!gameOver) triggerShoot();
+}
+
+// catat tombol dilepas untuk smooth movement
+static void keyboardUp(unsigned char key,int,int){
+    keys[key] = false;
 }
 
 // klik kiri untuk menembak
@@ -664,8 +670,19 @@ static void mouseClick(int button,int state,int,int){
     if(button==GLUT_LEFT_BUTTON&&state==GLUT_DOWN&&!gameOver) triggerShoot();
 }
 
-// timer untuk update frame dan animasi
+// timer untuk update frame, animasi, dan proses movement dari held keys
 static void timer(int){
+
+    if(!gameOver){
+        float rad=DEG2RAD(angle);
+        float nx=camX, nz=camZ;
+        if(keys['w']||keys['W']){ nx+=cosf(rad)*moveSpeed; nz+=sinf(rad)*moveSpeed; }
+        if(keys['s']||keys['S']){ nx-=cosf(rad)*moveSpeed; nz-=sinf(rad)*moveSpeed; }
+        if(keys['a']||keys['A']) angle-=turnSpeed;
+        if(keys['d']||keys['D']) angle+=turnSpeed;
+        if(canMove(nx,nz)){ camX=nx; camZ=nz; }
+    }
+
     if(gunFiring){gunFrame++;if(gunFrame>=GUN_FIRE_FRAMES)gunFiring=0;}
     if(gunCooldown>0) gunCooldown--;
     if(screenFlash>0){screenFlash-=0.04f;if(screenFlash<0)screenFlash=0;}
@@ -679,12 +696,14 @@ int main(int argc,char**argv){
     glutInit(&argc,argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
     glutInitWindowSize(WIN_W,WIN_H);
-    glutCreateWindow("Maze 3D â€” Doom Style + Enemies");
+    glutCreateWindow("Maze 3D — Doom Style + Enemies");
     camX=1.5f*CELL; camZ=1.5f*CELL; angle=90;
     glEnable(GL_DEPTH_TEST); glShadeModel(GL_SMOOTH); glEnable(GL_NORMALIZE);
     initEnemies();
     glutDisplayFunc(display); glutReshapeFunc(reshape);
-    glutKeyboardFunc(keyboard); glutMouseFunc(mouseClick);
+    glutKeyboardFunc(keyboard);
+    glutKeyboardUpFunc(keyboardUp); 
+    glutMouseFunc(mouseClick);
     glutTimerFunc(16,timer,0);
     glutMainLoop();
     return 0;
