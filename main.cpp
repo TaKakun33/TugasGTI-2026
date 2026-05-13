@@ -26,23 +26,23 @@
 
 // peta 2D, 1 = dinding, 0 = lantai
 static const int MAP[MAP_H][MAP_W] = {
-    {1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-    {1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1},
-    {1,1,1,0,1,0,1,1,0,1,1,0,1,1,1,0,1},
-    {1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1},
-    {1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1},
-    {1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1},
-    {1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1},
-    {1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1},
-    {1,1,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1},
-    {1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1},
-    {1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1},
-    {1,0,1,1,1,0,1,1,1,0,1,0,1,0,0,0,1},
-    {1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,1},
-    {1,0,0,0,1,0,0,0,1,0,1,1,1,0,1,0,1},
-    {1,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,1},
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1},
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+    {1,0,0,1,1,0,0,0,1,0,0,0,1,1,0,0,1},
+    {1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1},
+    {1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1},
+    {1,0,0,1,1,0,0,0,0,0,0,0,1,1,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1},
+    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 };
 
 // posisi dan arah kamera pemain
@@ -50,34 +50,33 @@ static float camX  = 1.5f * CELL;
 static float camZ  = 1.5f * CELL;
 static float camY  = WALL_H * 0.45f;
 static float angle = 90.0f;
-static float moveSpeed = 0.08f;
-static float turnSpeed  = 3.0f;
-
+static float moveSpeed = 0.16f;  
+static float turnSpeed  = 5.0f;
 static int showMap = 1;
 static int WIN_W = 960, WIN_H = 600;
 
 // status dan cooldown senjata
-static int gunFiring   = 0;
-static int gunFrame    = 0;
+static int gunFiring = 0;
+static int gunFrame = 0;
 static int gunCooldown = 0;
 #define GUN_FIRE_FRAMES  8
 #define GUN_COOLDOWN_MAX 15
 
 // sistem musuh
-#define MAX_ENEMIES          6
-#define ENEMY_HP_MAX         3
-#define ENEMY_SPEED          0.022f
-#define ENEMY_SIGHT          8.0f
-#define ENEMY_ATTACK_RANGE   1.4f
+#define MAX_ENEMIES 10  
+#define ENEMY_HP_MAX 3
+#define ENEMY_SPEED 0.022f
+#define ENEMY_SIGHT 8.0f
+#define ENEMY_ATTACK_RANGE 1.4f
 #define ENEMY_ATTACK_COOLDOWN 60
 
 enum EnemyState { ES_IDLE, ES_CHASE, ES_ATTACK, ES_DEAD };
 
 struct Enemy {
     float x, z;
-    int   hp;
+    int hp;
     EnemyState state;
-    int   attackTimer;
+    int attackTimer;
     float deathTimer;
     float flashTimer;
 };
@@ -85,10 +84,10 @@ struct Enemy {
 static Enemy enemies[MAX_ENEMIES];
 
 // status hp pemain
-static int   playerHP    = 5;
-static int   playerMaxHP = 5;
+static int playerHP    = 5;
+static int playerMaxHP = 5;
 static float screenFlash = 0.0f;
-static int   gameOver    = 0;
+static int gameOver    = 0;
 
 // cek apakah sel (mx,mz) adalah dinding
 static inline int isWall(int mx, int mz) {
@@ -105,7 +104,7 @@ static int hasLineOfSight(float ax, float az, float bx, float bz) {
     float dist = sqrtf(dx*dx + dz*dz);
     int steps = (int)(dist / (CELL * 0.25f)) + 1;
     for (int i = 1; i < steps; i++) {
-        float t  = (float)i / steps;
+        float t = (float)i / steps;
         float tx = ax + dx * t;
         float tz = az + dz * t;
         if (isWall(worldToCell(tx), worldToCell(tz))) return 0;
@@ -115,16 +114,17 @@ static int hasLineOfSight(float ax, float az, float bx, float bz) {
 
 // inisialisasi posisi dan status awal musuh
 static void initEnemies(void) {
-    const float spawnX[] = {9.5f,13.5f, 3.5f,11.5f, 7.5f,15.5f};
-    const float spawnZ[] = {1.5f, 3.5f, 9.5f, 9.5f,13.5f,13.5f};
+    // 10 titik spawn tersebar di berbagai sudut peta
+    const float spawnX[] = {2.5f, 7.5f,13.5f, 2.5f,14.5f, 5.5f,11.5f, 2.5f, 8.5f,14.5f};
+    const float spawnZ[] = {5.0f, 2.5f, 2.5f, 8.5f, 8.5f,13.5f,13.5f,14.5f,14.5f,14.5f};
     for (int i = 0; i < MAX_ENEMIES; i++) {
-        enemies[i].x           = spawnX[i] * CELL;
-        enemies[i].z           = spawnZ[i] * CELL;
-        enemies[i].hp          = ENEMY_HP_MAX;
-        enemies[i].state       = ES_IDLE;
+        enemies[i].x = spawnX[i] * CELL;
+        enemies[i].z = spawnZ[i] * CELL;
+        enemies[i].hp = ENEMY_HP_MAX;
+        enemies[i].state = ES_IDLE;
         enemies[i].attackTimer = 0;
-        enemies[i].deathTimer  = 0.0f;
-        enemies[i].flashTimer  = 0.0f;
+        enemies[i].deathTimer = 0.0f;
+        enemies[i].flashTimer = 0.0f;
     }
 }
 
@@ -146,7 +146,7 @@ static void updateEnemies(void) {
                 e.state = ES_ATTACK;
                 if (e.attackTimer <= 0) {
                     playerHP--;
-                    screenFlash   = 1.0f;
+                    screenFlash = 1.0f;
                     e.attackTimer = ENEMY_ATTACK_COOLDOWN;
                     if (playerHP <= 0) { playerHP = 0; gameOver = 1; }
                 }
@@ -198,14 +198,14 @@ static void drawEnemy(const Enemy &e) {
     float rx = -dz / dist;
     float rz =  dx / dist;
 
-    float topY  = WALL_H * 0.95f;
-    float botY  = 0.02f;
+    float topY = WALL_H * 0.95f;
+    float botY = 0.02f;
     float halfW = 0.45f;
 
     if (e.state == ES_DEAD) {
         float t = e.deathTimer;
-        topY  = WALL_H * 0.95f * (1.0f - fminf(t, 1.0f));
-        botY  = 0.02f - fminf(t, 1.0f) * 0.5f;
+        topY = WALL_H * 0.95f * (1.0f - fminf(t, 1.0f));
+        botY = 0.02f - fminf(t, 1.0f) * 0.5f;
         halfW = 0.45f + t * 0.3f;
     }
 
@@ -237,8 +237,10 @@ static void drawEnemy(const Enemy &e) {
         float hHW = halfW*0.45f;
         float hx0=e.x-rx*hHW, hz0=e.z-rz*hHW, hx1=e.x+rx*hHW, hz1=e.z+rz*hHW;
         glBegin(GL_QUADS);
-            glVertex3f(hx0,topY*0.55f,hz0); glVertex3f(hx1,topY*0.55f,hz1);
-            glVertex3f(hx1,topY,hz1);       glVertex3f(hx0,topY,hz0);
+            glVertex3f(hx0,topY*0.55f,hz0); 
+            glVertex3f(hx1,topY*0.55f,hz1);
+            glVertex3f(hx1,topY,hz1);       
+            glVertex3f(hx0,topY,hz0);
         glEnd();
 
         float eyeY = topY * 0.82f;
@@ -270,18 +272,18 @@ static void drawEnemy(const Enemy &e) {
         float hpR  = (float)e.hp / ENEMY_HP_MAX;
         glColor4f(0.4f,0.05f,0.05f,0.85f);
         glBegin(GL_QUADS);
-            glVertex3f(e.x-rx*barW,barY,        e.z-rz*barW);
-            glVertex3f(e.x+rx*barW,barY,        e.z+rz*barW);
-            glVertex3f(e.x+rx*barW,barY+0.09f,  e.z+rz*barW);
-            glVertex3f(e.x-rx*barW,barY+0.09f,  e.z-rz*barW);
+            glVertex3f(e.x-rx*barW,barY, e.z-rz*barW);
+            glVertex3f(e.x+rx*barW,barY, e.z+rz*barW);
+            glVertex3f(e.x+rx*barW,barY+0.09f, e.z+rz*barW);
+            glVertex3f(e.x-rx*barW,barY+0.09f, e.z-rz*barW);
         glEnd();
         float filledW = barW*2.0f*hpR - barW;
         glColor4f(1.0f-hpR, hpR, 0.0f, 0.9f);
         glBegin(GL_QUADS);
-            glVertex3f(e.x-rx*barW,   barY,       e.z-rz*barW);
-            glVertex3f(e.x+rx*filledW,barY,       e.z+rz*filledW);
+            glVertex3f(e.x-rx*barW, barY, e.z-rz*barW);
+            glVertex3f(e.x+rx*filledW,barY, e.z+rz*filledW);
             glVertex3f(e.x+rx*filledW,barY+0.09f, e.z+rz*filledW);
-            glVertex3f(e.x-rx*barW,   barY+0.09f, e.z-rz*barW);
+            glVertex3f(e.x-rx*barW, barY+0.09f, e.z-rz*barW);
         glEnd();
     }
 
@@ -296,11 +298,12 @@ static void drawAllEnemies(void) {
     for (int i = 0; i < MAX_ENEMIES; i++) order[i] = i;
     for (int i = 0; i < MAX_ENEMIES-1; i++)
         for (int j = i+1; j < MAX_ENEMIES; j++) {
-            float d1 = (camX-enemies[order[i]].x)*(camX-enemies[order[i]].x)
-                     + (camZ-enemies[order[i]].z)*(camZ-enemies[order[i]].z);
-            float d2 = (camX-enemies[order[j]].x)*(camX-enemies[order[j]].x)
-                     + (camZ-enemies[order[j]].z)*(camZ-enemies[order[j]].z);
-            if (d2 > d1) { int t=order[i]; order[i]=order[j]; order[j]=t; }
+            float d1 = (camX-enemies[order[i]].x)*(camX-enemies[order[i]].x) + (camZ-enemies[order[i]].z)*(camZ-enemies[order[i]].z);
+            float d2 = (camX-enemies[order[j]].x)*(camX-enemies[order[j]].x) + (camZ-enemies[order[j]].z)*(camZ-enemies[order[j]].z);
+            if (d2 > d1) { 
+                int t = order[i]; 
+                order[i] = order[j]; 
+                order[j] = t; }
         }
     for (int i = 0; i < MAX_ENEMIES; i++) drawEnemy(enemies[order[i]]);
 }
@@ -319,6 +322,13 @@ static void drawPistol(bool shooting) {
     
     // geser ke kanan-bawah layar
     glTranslatef(0.55f, -0.55f + recoilY, 0.0f);
+
+    // hitung sudut dari posisi pistol ke crosshair di tengah layar (0,0)
+    // laras pistol mengarah ke kiri (-X), jadi offset sudut 180 derajat
+    float aimDX = 0.0f - 0.55f;
+    float aimDY = 0.0f - (-0.55f + recoilY);
+    float aimAngle = atan2f(aimDY, aimDX) * 180.0f / PI - 180.0f;
+    glRotatef(aimAngle, 0.0f, 0.0f, 1.0f);
 
     // gambar tangan
     glColor3f(0.8f, 0.6f, 0.4f);
