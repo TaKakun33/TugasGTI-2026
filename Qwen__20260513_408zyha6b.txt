@@ -1,0 +1,9 @@
+project/
+├── config.h       # Include platform, macro, deklarasi variabel global & fungsi
+├── enemy.h        # Struktur & deklarasi musuh
+├── enemy.cpp      # Implementasi logika & rendering musuh
+├── weapon.h       # Deklarasi senjata
+├── weapon.cpp     # Implementasi pistol & tembakan
+├── renderer.h     # Deklarasi utility & rendering 3D/HUD
+├── renderer.cpp   # Implementasi rendering, lighting, minimap, HUD
+└── game.cpp       # Definisi global, input, game loop, main()
