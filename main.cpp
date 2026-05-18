@@ -87,10 +87,10 @@ struct Enemy {
 static Enemy enemies[MAX_ENEMIES];
 
 // status hp pemain
-static int playerHP    = 5;
+static int playerHP = 5;
 static int playerMaxHP = 5;
 static float screenFlash = 0.0f;
-static int gameOver    = 0;
+static int gameOver = 0;
 
 // held-keys array untuk smooth movement
 static bool keys[256] = {};
@@ -193,7 +193,7 @@ static void shootCheck(void) {
     }
 }
 
-// gambar musuh 2d yang selalu menghadap kamera (billboard)
+// gambar musuh 2d yang selalu menghadap kamera 
 static void drawEnemy(const Enemy &e) {
     if (e.state == ES_DEAD && e.deathTimer > 1.5f) return;
 
@@ -539,14 +539,34 @@ static void drawHUD(int winW, int winH) {
 
     // bar hp pemain
     float hpR=(float)playerHP/playerMaxHP;
-    glColor4f(0.95f,0.85f,0.7f,1); glRasterPos2i(10,42);
+    glColor4f(0.95f,0.85f,0.7f,1); 
+    glRasterPos2i(10,42);
     for(const char*c="HP:";*c;c++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13,*c);
+
     glColor4f(0.25f,0.06f,0.06f,0.85f);
-    glBegin(GL_QUADS);glVertex2f(40,36);glVertex2f(220,36);glVertex2f(220,56);glVertex2f(40,56);glEnd();
+        glBegin(GL_QUADS);
+        glVertex2f(40,36);
+        glVertex2f(220,36);
+        glVertex2f(220,56);
+    glVertex2f(40,56);
+    glEnd();
+
     glColor4f(1-hpR,hpR,0.05f,1);
-    glBegin(GL_QUADS);glVertex2f(40,36);glVertex2f(40+180*hpR,36);glVertex2f(40+180*hpR,56);glVertex2f(40,56);glEnd();
-    glColor4f(0.7f,0.7f,0.6f,1); glLineWidth(1.5f);
-    glBegin(GL_LINE_LOOP);glVertex2f(40,36);glVertex2f(220,36);glVertex2f(220,56);glVertex2f(40,56);glEnd();
+    glBegin(GL_QUADS);
+        glVertex2f(40,36);
+        glVertex2f(40+180*hpR,36);
+        glVertex2f(40+180*hpR,56);
+        glVertex2f(40,56);
+    glEnd();
+
+    glColor4f(0.7f,0.7f,0.6f,1); 
+    glLineWidth(1.5f);
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(40,36);
+        glVertex2f(220,36);
+        glVertex2f(220,56);
+        glVertex2f(40,56);
+    glEnd();
 
     // jumlah musuh tersisa
     int alive=0;
@@ -650,7 +670,7 @@ static void triggerShoot(void){
     }
 }
 
-// input keyboard — hanya catat tombol ditekan, tidak langsung gerak
+// input keyboard  hanya catat tombol ditekan, tidak langsung gerak
 static void keyboard(unsigned char key,int,int){
     keys[key] = true;
     // keluar game dengan tombol ESC atau Q
@@ -696,7 +716,7 @@ int main(int argc,char**argv){
     glutInit(&argc,argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
     glutInitWindowSize(WIN_W,WIN_H);
-    glutCreateWindow("Maze 3D — Doom Style + Enemies");
+    glutCreateWindow("GTIMazeShooter");
     camX=1.5f*CELL; camZ=1.5f*CELL; angle=90;
     glEnable(GL_DEPTH_TEST); glShadeModel(GL_SMOOTH); glEnable(GL_NORMALIZE);
     initEnemies();
