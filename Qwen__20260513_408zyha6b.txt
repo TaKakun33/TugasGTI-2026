@@ -7,3 +7,4 @@ project/
 ├── renderer.h     # Deklarasi utility & rendering 3D/HUD
 ├── renderer.cpp   # Implementasi rendering, lighting, minimap, HUD
 └── game.cpp       # Definisi global, input, game loop, main()
+└── stb_image.h    # not sure what this is for tbh

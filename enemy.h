@@ -10,6 +10,7 @@ struct Enemy {
     int attackTimer;
     float deathTimer;
     float flashTimer;
+
 };
 
 extern Enemy enemies[MAX_ENEMIES];
@@ -19,3 +20,5 @@ void updateEnemies();
 void shootCheck();
 void drawEnemy(const Enemy &e);
 void drawAllEnemies();
+
+// sda
