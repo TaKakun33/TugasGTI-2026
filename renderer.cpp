@@ -1,30 +1,151 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "renderer.h"
 #include "enemy.h"
 
+
+GLuint textures[TEX_COUNT];
+
+static bool loadTexture(GLuint &texID, const char *path) {
+    int w, h, channels;
+    stbi_set_flip_vertically_on_load(1);
+    unsigned char *data = stbi_load(path, &w, &h, &channels, 4);
+    if (!data) {
+        fprintf(stderr, "Failed to load: %s\n", path);
+        return false;
+    }
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+    return true;
+}
+
+void loadAllTextures() {
+    loadTexture(textures[TEX_WALL],    "Wall_sprite.png");
+    loadTexture(textures[TEX_FLOOR],   "Floor_sprite.png");
+    loadTexture(textures[TEX_CEILING], "Ceiling_sprite.png");
+    loadTexture(textures[TEX_ENEMY],   "Enemy_sprite.jpeg");
+}
+
 void drawFloorCeiling() {
+    glEnable(GL_TEXTURE_2D);
+
+    // flooring
+    glBindTexture(GL_TEXTURE_2D, textures[TEX_FLOOR]);
+    glColor3f(1,1,1);
+    glNormal3f(0,1,0);
     glBegin(GL_QUADS);
-    glColor3f(0.76f,0.72f,0.58f); glNormal3f(0,1,0);
-    glVertex3f(0,0,0); glVertex3f(MAP_W*CELL,0,0);
-    glVertex3f(MAP_W*CELL,0,MAP_H*CELL); glVertex3f(0,0,MAP_H*CELL);
+        glTexCoord2f(0,0);          
+        glVertex3f(0, 0, 0);
+        glTexCoord2f(MAP_W,0);      
+        glVertex3f(MAP_W*CELL, 0, 0);
+        glTexCoord2f(MAP_W,MAP_H);  
+        glVertex3f(MAP_W*CELL, 0, MAP_H*CELL);
+        glTexCoord2f(0,MAP_H);      
+        glVertex3f(0, 0, MAP_H*CELL);
     glEnd();
+
+    // ceiling
+    glBindTexture(GL_TEXTURE_2D, textures[TEX_CEILING]);
+    glColor3f(1,1,1);
+    glNormal3f(0,-1,0);
     glBegin(GL_QUADS);
-    glColor3f(0.92f,0.90f,0.82f); glNormal3f(0,-1,0);
-    glVertex3f(0,WALL_H,0); glVertex3f(MAP_W*CELL,WALL_H,0);
-    glVertex3f(MAP_W*CELL,WALL_H,MAP_H*CELL); glVertex3f(0,WALL_H,MAP_H*CELL);
+        glTexCoord2f(0,0);          
+        glVertex3f(0, WALL_H, 0);
+        glTexCoord2f(MAP_W,0);      
+        glVertex3f(MAP_W*CELL, WALL_H, 0);
+        glTexCoord2f(MAP_W,MAP_H);  
+        glVertex3f(MAP_W*CELL, WALL_H, MAP_H*CELL);
+        glTexCoord2f(0,MAP_H);      
+        glVertex3f(0, WALL_H, MAP_H*CELL);
     glEnd();
+
+    glDisable(GL_TEXTURE_2D);
 }
 
 void drawWallCube(int mx, int mz) {
-    float x0=mx*CELL, x1=x0+CELL;
-    float z0=mz*CELL, z1=z0+CELL;
-    float y0=0.0f, y1=WALL_H;
-    glColor3f(0.82f,0.82f,0.68f);
-    if (!isWall(mx,mz-1)){glBegin(GL_QUADS);glNormal3f(0,0,-1);glVertex3f(x0,y0,z0);glVertex3f(x1,y0,z0);glVertex3f(x1,y1,z0);glVertex3f(x0,y1,z0);glEnd();}
-    if (!isWall(mx,mz+1)){glBegin(GL_QUADS);glNormal3f(0,0,1); glVertex3f(x1,y0,z1);glVertex3f(x0,y0,z1);glVertex3f(x0,y1,z1);glVertex3f(x1,y1,z1);glEnd();}
-    if (!isWall(mx-1,mz)){glBegin(GL_QUADS);glNormal3f(-1,0,0);glVertex3f(x0,y0,z1);glVertex3f(x0,y0,z0);glVertex3f(x0,y1,z0);glVertex3f(x0,y1,z1);glEnd();}
-    if (!isWall(mx+1,mz)){glBegin(GL_QUADS);glNormal3f(1,0,0); glVertex3f(x1,y0,z0);glVertex3f(x1,y0,z1);glVertex3f(x1,y1,z1);glVertex3f(x1,y1,z0);glEnd();}
-    glColor3f(0.75f,0.75f,0.62f);
-    glBegin(GL_QUADS);glNormal3f(0,1,0);glVertex3f(x0,y1,z0);glVertex3f(x1,y1,z0);glVertex3f(x1,y1,z1);glVertex3f(x0,y1,z1);glEnd();
+    float x0 = mx*CELL, x1=x0+CELL;
+    float z0 = mz*CELL, z1=z0+CELL;
+    float y0 = 0.0f, y1=WALL_H;
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, textures[TEX_WALL]);
+    glColor3f(1,1,1);
+
+    if (!isWall(mx,mz-1)){
+        glBegin(GL_QUADS);
+            glNormal3f(0,0,-1);
+            glTexCoord2f(0,0); 
+            glVertex3f(x0,y0,z0);
+            glTexCoord2f(1,0); 
+            glVertex3f(x1,y0,z0);
+            glTexCoord2f(1,1); 
+            glVertex3f(x1,y1,z0);
+            glTexCoord2f(0,1); 
+            glVertex3f(x0,y1,z0);
+        glEnd();
+    }
+    if (!isWall(mx,mz+1)){
+        glBegin(GL_QUADS);
+            glNormal3f(0,0,1);
+            glTexCoord2f(0,0); 
+            glVertex3f(x1,y0,z1);
+            glTexCoord2f(1,0); 
+            glVertex3f(x0,y0,z1);
+            glTexCoord2f(1,1); 
+            glVertex3f(x0,y1,z1);
+            glTexCoord2f(0,1); 
+            glVertex3f(x1,y1,z1);
+        glEnd();
+    }
+    if (!isWall(mx-1,mz)){
+        glBegin(GL_QUADS);
+            glNormal3f(-1,0,0);
+            glTexCoord2f(0,0); 
+            glVertex3f(x0,y0,z1);
+            glTexCoord2f(1,0); 
+            glVertex3f(x0,y0,z0);
+            glTexCoord2f(1,1); 
+            glVertex3f(x0,y1,z0);
+            glTexCoord2f(0,1); 
+            glVertex3f(x0,y1,z1);
+        glEnd();
+    }
+    if (!isWall(mx+1,mz)){
+        glBegin(GL_QUADS);
+            glNormal3f(1,0,0);
+            glTexCoord2f(0,0); 
+            glVertex3f(x1,y0,z0);
+            glTexCoord2f(1,0); 
+            glVertex3f(x1,y0,z1);
+            glTexCoord2f(1,1); 
+            glVertex3f(x1,y1,z1);
+            glTexCoord2f(0,1); 
+            glVertex3f(x1,y1,z0);
+        glEnd();
+    }
+
+    // Wall top face (slightly darker tint)
+    glColor3f(0.85f,0.85f,0.85f);
+    glBegin(GL_QUADS);
+        glNormal3f(0,1,0);
+        glTexCoord2f(0,0); 
+        glVertex3f(x0,y1,z0);
+        glTexCoord2f(1,0); 
+        glVertex3f(x1,y1,z0);
+        glTexCoord2f(1,1); 
+        glVertex3f(x1,y1,z1);
+        glTexCoord2f(0,1); 
+        glVertex3f(x0,y1,z1);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
 }
 
 void drawMaze3D() {
@@ -34,41 +155,61 @@ void drawMaze3D() {
 }
 
 void setupLighting() {
-    glEnable(GL_LIGHTING); glEnable(GL_LIGHT0); glEnable(GL_LIGHT1);
-    GLfloat amb[]  ={0.35f,0.33f,0.22f,1};
-    GLfloat d0[]   ={0.80f,0.76f,0.55f,1};
-    GLfloat s0[]   ={0.20f,0.20f,0.15f,1};
-    GLfloat pos0[] ={camX, WALL_H*0.9f, camZ, 1};
+    glEnable(GL_LIGHTING); 
+    glEnable(GL_LIGHT0); 
+    glEnable(GL_LIGHT1);
+
+    GLfloat amb[] = {0.35f,0.33f,0.22f,1};
+    GLfloat d0[]  = {0.80f,0.76f,0.55f,1};
+    GLfloat s0[]   = {0.20f,0.20f,0.15f,1};
+    GLfloat pos0[] = {camX, WALL_H*0.9f, camZ, 1};
+
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb);
-    glLightfv(GL_LIGHT0,GL_DIFFUSE,d0); glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,d0); 
+    glLightfv(GL_LIGHT0,GL_SPECULAR,s0);
     glLightfv(GL_LIGHT0,GL_POSITION,pos0);
     glLightf(GL_LIGHT0,GL_QUADRATIC_ATTENUATION,0.08f);
+    
     GLfloat d1[]  ={0.25f,0.25f,0.20f,1};
     GLfloat pos1[]={0,1,0,0};
+    
     glLightfv(GL_LIGHT1,GL_DIFFUSE,d1); glLightfv(GL_LIGHT1,GL_POSITION,pos1);
+    
     GLfloat ms[]={0.1f,0.1f,0.1f,1};
-    glMaterialfv(GL_FRONT,GL_SPECULAR,ms); glMateriali(GL_FRONT,GL_SHININESS,8);
+    
+    glMaterialfv(GL_FRONT,GL_SPECULAR,ms); 
+    glMateriali(GL_FRONT,GL_SHININESS,8);
     glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
 }
 
 void setPerspectiveView(int w, int h) {
-    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    float rad = DEG2RAD(angle);
+
+    glMatrixMode(GL_PROJECTION); 
+    glLoadIdentity();
     gluPerspective(70.0,(double)w/h,0.1,100.0);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
-    float rad=DEG2RAD(angle);
     gluLookAt(camX,camY,camZ, camX+std::cosf(rad),camY,camZ+std::sinf(rad), 0,1,0);
 }
 
 void drawMinimap(int winW, int winH) {
     int mw=160,mh=160,ox=winW-mw-8,oy=8;
+
     glViewport(ox,oy,mw,mh);
-    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    glMatrixMode(GL_PROJECTION); 
+    glLoadIdentity();
     glOrtho(0,MAP_W*CELL,MAP_H*CELL,0,-1,1);
-    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
-    glDisable(GL_LIGHTING); glDisable(GL_DEPTH_TEST);
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity();
+    glDisable(GL_LIGHTING); 
+    glDisable(GL_DEPTH_TEST);
+
     glColor4f(0.1f,0.1f,0.08f,0.85f);
-    glBegin(GL_QUADS);glVertex2f(0,0);glVertex2f(MAP_W*CELL,0);glVertex2f(MAP_W*CELL,MAP_H*CELL);glVertex2f(0,MAP_H*CELL);glEnd();
+    glBegin(GL_QUADS);glVertex2f(0,0);
+    glVertex2f(MAP_W*CELL,0);
+    glVertex2f(MAP_W*CELL,MAP_H*CELL);
+    glVertex2f(0,MAP_H*CELL);glEnd();
 
     for(int z=0;z<MAP_H;z++) for(int x=0;x<MAP_W;x++){
         float fx=x*CELL,fz=z*CELL;
@@ -88,22 +229,37 @@ void drawMinimap(int winW, int winH) {
     float ax=camX+std::cosf(pr)*0.45f,az=camZ+std::sinf(pr)*0.45f;
     float bx=camX+std::cosf(pr+2.4f)*0.25f,bz=camZ+std::sinf(pr+2.4f)*0.25f;
     float cx2=camX+std::cosf(pr-2.4f)*0.25f,cz2=camZ+std::sinf(pr-2.4f)*0.25f;
+    
     glColor3f(1,0.85f,0.1f);
-    glBegin(GL_TRIANGLES);glVertex2f(ax,az);glVertex2f(bx,bz);glVertex2f(cx2,cz2);glEnd();
+    glBegin(GL_TRIANGLES);
+        glVertex2f(ax,az);
+        glVertex2f(bx,bz);
+        glVertex2f(cx2,cz2);
+    glEnd();
+    
     glEnable(GL_DEPTH_TEST);
 }
 
 void drawHUD(int winW, int winH) {
     glViewport(0,0,winW,winH);
-    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    glMatrixMode(GL_PROJECTION); 
+    glLoadIdentity();
     glOrtho(0,winW,0,winH,-1,1);
-    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
-    glDisable(GL_LIGHTING); glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity();
+    glDisable(GL_LIGHTING); 
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND); 
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     
     if(screenFlash >0){
         glColor4f(0.9f,0.05f,0.05f,screenFlash*0.45f);
-        glBegin(GL_QUADS);glVertex2f(0,0);glVertex2f(winW,0);glVertex2f(winW,winH);glVertex2f(0,winH);glEnd();
+        glBegin(GL_QUADS);
+            glVertex2f(0,0);
+            glVertex2f(winW,0);
+            glVertex2f(winW,winH);
+            glVertex2f(0,winH);
+        glEnd();
     }
 
     float hpR=(float)playerHP/playerMaxHP;

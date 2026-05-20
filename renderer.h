@@ -15,3 +15,4 @@ void setPerspectiveView(int w, int h);
 void drawMinimap(int winW, int winH);
 void drawHUD(int winW, int winH);
 int canMove(float nx, float nz);
+void loadAllTextures();

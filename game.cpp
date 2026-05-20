@@ -121,6 +121,7 @@ int main(int argc, char**argv){
     glShadeModel(GL_SMOOTH); 
     glEnable(GL_NORMALIZE);
     initEnemies();
+    loadAllTextures();
 
     glutDisplayFunc(display); 
     glutReshapeFunc(reshape);

@@ -50,3 +50,12 @@ extern int gunFiring, gunFrame, gunCooldown;
 extern int playerHP, playerMaxHP, gameOver;
 extern float screenFlash;
 extern bool keys[256];
+
+// texture ids for textring i think. using stb_image from github which
+#define TEX_WALL    0
+#define TEX_FLOOR   1
+#define TEX_CEILING 2
+#define TEX_ENEMY   3
+#define TEX_COUNT   4
+
+extern GLuint textures[TEX_COUNT];
