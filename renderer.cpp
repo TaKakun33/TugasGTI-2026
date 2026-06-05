@@ -1,4 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define GL_GLEXT_PROTOTYPES 1
 #include "stb_image.h"
 #include "renderer.h"
 #include "enemy.h"
