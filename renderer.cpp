@@ -316,7 +316,7 @@ void drawHUD(int winW, int winH) {
     for(const char*c=buf;*c;c++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13,*c);
 
     glColor4f(0.9f,0.9f,0.7f,1); glRasterPos2i(8,10);
-    const char*hint= "[W/S] Maju/Mundur  [A/D] Putar  [M] Minimap  [SPACE/LMB] Tembak  [R] Restart  [ESC/Q] Keluar ";
+    const char*hint= "[W/S] Maju/Mundur  [A/D] Putar [SPACE/LMB] Tembak  [R] Restart  [ESC/Q] Keluar ";
     for(const char*c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13,*c);
 
     int cx=winW/2,cy=winH/2;
