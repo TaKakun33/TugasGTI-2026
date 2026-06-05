@@ -47,13 +47,6 @@ void updateEnemies() {
 
         // === SPEED DINAMIS ===
         float currentSpeed = ENEMY_SPEED;
-        if (isLanternRedMode()) {
-            currentSpeed = ENEMY_SPEED * 4.0f; // 2.8x lebih cepet pas merah
-            e.flashTimer = 0.1f; // bikin musuh kedip merah
-        } else if (!lanternOn) {
-            currentSpeed = ENEMY_SPEED * 4.0f; // 2x lebih cepet pas lampu mati
-        }
-        // =====================
 
         if (dist < ENEMY_SIGHT && hasLineOfSight(e.x, e.z, camX, camZ)) {
             if (dist < ENEMY_ATTACK_RANGE) {

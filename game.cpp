@@ -17,7 +17,6 @@ float camY  = WALL_H * 0.45f;
 float angle = 90.0f;
 float moveSpeed = 0.16f;
 float turnSpeed  = 3.0f;
-int showMap = 1;
 int WIN_W = 960, WIN_H = 600;
 int gunFiring = 0;
 int gunFrame = 0;
@@ -26,7 +25,7 @@ int playerHP    = 5;
 int playerMaxHP = 5;
 float screenFlash = 0.0f;
 int gameOver    = 0;
-bool lanternOn = false;
+bool lanternOn = true;
 bool keys[256] = {};
 Enemy enemies[MAX_ENEMIES];
 
@@ -175,6 +174,74 @@ static void connectRooms(BSPNode *node) {
     carveCorridor(l.cx(), l.cz(), r.cx(), r.cz());
 }
 
+// ---------------------------------------------------------------------------
+// Flood fill: returns a 2D array marking all floor cells reachable from (sx,sz)
+// ---------------------------------------------------------------------------
+static void floodFill(int sx, int sz, bool visited[MAP_H][MAP_W]) {
+    // Iterative BFS to avoid stack overflow on large maps
+    int qx[MAP_W * MAP_H], qz[MAP_W * MAP_H];
+    int head = 0, tail = 0;
+    qx[tail] = sx; qz[tail] = sz; tail++;
+    visited[sz][sx] = true;
+    const int dx[] = {1,-1,0,0};
+    const int dz[] = {0,0,1,-1};
+    while (head < tail) {
+        int cx = qx[head], cz = qz[head]; head++;
+        for (int d = 0; d < 4; d++) {
+            int nx = cx + dx[d], nz = cz + dz[d];
+            if (nx < 0 || nx >= MAP_W || nz < 0 || nz >= MAP_H) continue;
+            if (MAP[nz][nx] != 0) continue;
+            if (visited[nz][nx]) continue;
+            visited[nz][nx] = true;
+            qx[tail] = nx; qz[tail] = nz; tail++;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// After BSP generation, ensure ALL open floor cells are reachable from the
+// player start cell (1,1).  Any disconnected open region gets a straight
+// corridor carved to the nearest already-connected open cell.
+// ---------------------------------------------------------------------------
+static void ensureConnectivity() {
+    // Guarantee player start is always open first
+    MAP[1][1] = 0; MAP[1][2] = 0;
+    MAP[2][1] = 0; MAP[2][2] = 0;
+
+    // Keep carving corridors until nothing is unreachable
+    // (one pass is usually enough; the loop handles pathological cases)
+    for (int pass = 0; pass < MAP_W * MAP_H; pass++) {
+        bool visited[MAP_H][MAP_W] = {};
+        floodFill(1, 1, visited);
+
+        // Find first unreachable open cell
+        int ux = -1, uz = -1;
+        for (int z = 1; z < MAP_H - 1 && ux < 0; z++)
+            for (int x = 1; x < MAP_W - 1 && ux < 0; x++)
+                if (MAP[z][x] == 0 && !visited[z][x])
+                    { ux = x; uz = z; }
+
+        if (ux < 0) break; // everything connected — done
+
+        // Find nearest connected open cell to (ux, uz)
+        int bestX = 1, bestZ = 1, bestDist = 999999;
+        for (int z = 1; z < MAP_H - 1; z++)
+            for (int x = 1; x < MAP_W - 1; x++) {
+                if (!visited[z][x]) continue;
+                int dist = (x - ux)*(x - ux) + (z - uz)*(z - uz);
+                if (dist < bestDist) { bestDist = dist; bestX = x; bestZ = z; }
+            }
+
+        // Carve an L-shaped corridor from (ux,uz) to (bestX,bestZ)
+        // Horizontal leg first
+        int x1 = std::min(ux, bestX), x2 = std::max(ux, bestX);
+        for (int x = x1; x <= x2; x++) MAP[uz][x] = 0;
+        // Vertical leg
+        int z1 = std::min(uz, bestZ), z2 = std::max(uz, bestZ);
+        for (int z = z1; z <= z2; z++) MAP[z][bestX] = 0;
+    }
+}
+
 static void generateMap() {
     // Fill everything with walls
     for (int z = 0; z < MAP_H; z++)
@@ -192,11 +259,12 @@ static void generateMap() {
     for (int x = 0; x < MAP_W; x++) MAP[0][x] = MAP[MAP_H-1][x] = 1;
     for (int z = 0; z < MAP_H; z++) MAP[z][0] = MAP[z][MAP_W-1] = 1;
 
-    // Guarantee player start is open
-    MAP[1][1] = 0;
-    MAP[1][2] = 0;
-    MAP[2][1] = 0;
-    MAP[2][2] = 0;
+    // Guarantee player start is open AND every floor cell is reachable
+    ensureConnectivity();
+
+    // Re-enforce border after corridor carving (safety)
+    for (int x = 0; x < MAP_W; x++) MAP[0][x] = MAP[MAP_H-1][x] = 1;
+    for (int z = 0; z < MAP_H; z++) MAP[z][0] = MAP[z][MAP_W-1] = 1;
 }
 
 static void placeEnemies() {
@@ -304,7 +372,6 @@ if (!lanternOn) {
 	glDisable(GL_FOG);
     drawLantern();
     drawGunOverlay(WIN_W, WIN_H);
-    if (showMap) drawMinimap(WIN_W, WIN_H);
     drawHUD(WIN_W, WIN_H);
     glutSwapBuffers();
 }
@@ -318,20 +385,7 @@ void keyboard(unsigned char key, int, int) {
     keys[key] = true;
     if (key == 27 || key == 'q' || key == 'Q') exit(0);
     if (key == 'r' || key == 'R') { resetGame(); return; }
-    if (key == 'm' || key == 'M') showMap = !showMap;
     if (key == ' ' && !gameOver) triggerShoot();
-	// Tekan L untuk menyalakan/mematikan senter
-    if (key == 'l' || key == 'L') {
-    if (isLanternRedMode()) {
-        // Mode merah: cuma 20% chance berhasil mati
-        if (rand() % 100 < 20) {
-            lanternOn = !lanternOn;
-        }
-        // kalau gagal, diem aja. Biar kerasa macet
-    } else {
-        lanternOn = !lanternOn; // mode normal: 100% work
-    }
-}
 }
 
 void keyboardUp(unsigned char key, int, int) { keys[key] = false; }
