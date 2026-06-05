@@ -1,7 +1,11 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define GL_GLEXT_PROTOTYPES 1
 #include "stb_image.h"
 #include "renderer.h"
 #include "enemy.h"
+#include <cmath>
+#include <cstring>
+#include <cstdio>
 
 extern bool lanternOn; // Mengakses variabel dari game.cpp
 
@@ -21,8 +25,10 @@ static bool loadTexture(GLuint &texID, const char *path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    // Fixed: Using GLU to generate mipmaps
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    
     stbi_image_free(data);
     return true;
 }
@@ -214,81 +220,6 @@ void setupLighting() {
     glEnable(GL_COLOR_MATERIAL);
 }
 
-/*
-
-void setupLighting() {
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0); // Wajib aktifkan sumber cahaya utama
-
-    if (lanternOn) {
-        // === SENTER NYALA (Terang & Oranye) ===
-        
-        // Ambient: Sedikit cahaya dasar agar bayangan tidak pitch-black saat ada senter
-        GLfloat amb[] = {0.05f, 0.04f, 0.03f, 1.0f}; 
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
-
-        // Posisi Cahaya: Menempel di depan kamera
-        float rad = DEG2RAD(angle);
-        float forward = 0.8f; 
-        GLfloat pos0[] = {
-            camX + std::cosf(rad) * forward, 
-            camY, 
-            camZ + std::sinf(rad) * forward, 
-            1.0f
-        };
-        glLightfv(GL_LIGHT0, GL_POSITION, pos0);
-
-        // Diffuse: Warna utama oranye terang
-        GLfloat diffOn[] = {1.2f, 0.9f, 0.4f, 1.0f}; 
-        GLfloat specOn[] = {0.5f, 0.35f, 0.1f, 1.0f};
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, diffOn);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, specOn);
-        
-        // Attenuation: Jarak jangkau menengah
-        glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.0f);
-        glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.4f);   // Lebih jauh dari sebelumnya
-        glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.8f); 
-
-    } else {
-        // === SENTER MATI (BENAR-BENAR HITAM / PITCH BLACK) ===
-        
-        // Ambient: 0.0f berarti TIDAK ADA cahaya lingkungan sama sekali
-        GLfloat amb[] = {0.0f, 0.0f, 0.0f, 1.0f}; 
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
-
-        // Posisi Cahaya: Tetap di kamera (meski matinya, biar pas dinyalakan langsung muncul di depan)
-        float rad = DEG2RAD(angle);
-        float forward = 0.8f; 
-        GLfloat pos0[] = {
-            camX + std::cosf(rad) * forward, 
-            camY, 
-            camZ + std::sinf(rad) * forward, 
-            1.0f
-        };
-        glLightfv(GL_LIGHT0, GL_POSITION, pos0);
-
-        // Diffuse & Specular: 0.0f berarti sumber cahaya tidak memancarkan apa-apa
-        GLfloat diffOff[] = {0.0f, 0.0f, 0.0f, 1.0f}; 
-        GLfloat specOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, diffOff);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, specOff);
-
-        // Attenuation tidak masalah karena intensitas cahaya sudah 0
-    }
-
-    glDisable(GL_LIGHT1); // Matikan cahaya statis lain
-
-    // Material Setup
-    GLfloat ms[] = {0.1f, 0.1f, 0.1f, 1.0f};
-    glMaterialfv(GL_FRONT, GL_SPECULAR, ms);
-    glMateriali(GL_FRONT, GL_SHININESS, 4);
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);
-}
-
-
-*/
-
 void setPerspectiveView(int w, int h) {
     float rad = DEG2RAD(angle);
 
@@ -422,4 +353,53 @@ int canMove(float nx, float nz){
            !isWall(worldToCell(nx+m),worldToCell(nz-m)) &&
            !isWall(worldToCell(nx-m),worldToCell(nz+m)) &&
            !isWall(worldToCell(nx+m),worldToCell(nz+m));
+}
+
+// ---------------------------------------------------------------------------
+// Planar Shadow
+// Projects the enemy billboard silhouette onto the floor (Y=0) using a fixed
+// overhead light position.
+// ---------------------------------------------------------------------------
+void drawPlanarShadow(float ex, float ez, float halfW, float spriteTopY) {
+    const float lx = camX;
+    const float ly = WALL_H * 0.9f;
+    const float lz = camZ;
+    const float floorY = 0.01f;   
+
+    float dx = camX - ex, dz = camZ - ez;
+    float dist = std::sqrtf(dx*dx + dz*dz);
+    if (dist < 0.01f) return;
+    float rx = -dz / dist;
+    float rz =  dx / dist;
+
+    float cx[4] = { ex - rx*halfW, ex + rx*halfW, ex + rx*halfW, ex - rx*halfW };
+    float cy[4] = { 0.02f,        0.02f,         spriteTopY,    spriteTopY    };
+    float cz2[4] = { ez - rz*halfW, ez + rz*halfW, ez + rz*halfW, ez - rz*halfW };
+
+    float px[4], pz[4];
+    for (int i = 0; i < 4; i++) {
+        float vx = cx[i] - lx;
+        float vy = cy[i] - ly;
+        float vz = cz2[i] - lz;
+        if (std::fabsf(vy) < 0.001f) { px[i] = cx[i]; pz[i] = cz2[i]; continue; }
+        float t = (floorY - ly) / vy;
+        px[i] = lx + t * vx;
+        pz[i] = lz + t * vz;
+    }
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(0.0f, 0.0f, 0.0f, 0.38f);
+    glBegin(GL_QUADS);
+        glVertex3f(px[0], floorY, pz[0]);
+        glVertex3f(px[1], floorY, pz[1]);
+        glVertex3f(px[2], floorY, pz[2]);
+        glVertex3f(px[3], floorY, pz[3]);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
 }
