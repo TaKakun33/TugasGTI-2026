@@ -26,7 +26,6 @@ static bool loadTexture(GLuint &texID, const char *path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    // Fixed: Using GLU to generate mipmaps
     gluBuild2DMipmaps(GL_TEXTURE_2D, 4, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
     
     stbi_image_free(data);
@@ -138,7 +137,6 @@ void drawWallCube(int mx, int mz) {
         glEnd();
     }
 
-    // Wall top face (slightly darker tint)
     glColor3f(0.85f,0.85f,0.85f);
     glBegin(GL_QUADS);
         glNormal3f(0,1,0);
