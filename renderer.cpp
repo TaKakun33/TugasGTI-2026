@@ -7,7 +7,7 @@
 #include <cstring>
 #include <cstdio>
 
-extern bool lanternOn; // Mengakses variabel dari game.cpp
+extern bool lanternOn; 
 
 GLuint textures[TEX_COUNT];
 
@@ -165,16 +165,13 @@ void setupLighting() {
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    // Efek Kedipan Global (Sinkron dengan api di lantern.cpp)
     static float flickerTime = 0.0f;
     flickerTime += 0.1f;
-    // Nilai antara 0.8 sampai 1.2
     float flicker = 0.9f + 0.1f * std::sinf(flickerTime * 10.0f) * std::cosf(flickerTime * 23.0f);
 
     GLfloat amb[] = {0.02f, 0.02f, 0.03f, 1.0f}; 
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
 
-    // Posisi Cahaya: Menempel di depan kamera
     float rad = DEG2RAD(angle);
     float forward = 0.8f; 
     GLfloat pos0[] = {
@@ -186,20 +183,16 @@ void setupLighting() {
     glLightfv(GL_LIGHT0, GL_POSITION, pos0);
 
     if (lanternOn) {
-        // === OBOR NYALA (Oranye Berkedip) ===
-        // Intensitas dikalikan dengan 'flicker'
         GLfloat diffOn[] = {1.2f * flicker, 0.8f * flicker, 0.3f * flicker, 1.0f}; 
         GLfloat specOn[] = {0.5f * flicker, 0.3f * flicker, 0.1f * flicker, 1.0f};
         
         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffOn);
         glLightfv(GL_LIGHT0, GL_SPECULAR, specOn);
         
-        // Attenuation: Jarak pendek, cepat memudar (khas obor)
         glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.0f);
         glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.8f);
         glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1.5f);
     } else {
-        // === OBOR MATI (Gelap Total/Biru Bulan) ===
         GLfloat diffOff[] = {0.05f, 0.06f, 0.10f, 1.0f}; 
         GLfloat specOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
         glLightfv(GL_LIGHT0, GL_DIFFUSE, diffOff);
@@ -212,7 +205,6 @@ void setupLighting() {
 
     glDisable(GL_LIGHT1);
 
-    // Material Setup
     GLfloat ms[] = {0.1f, 0.1f, 0.1f, 1.0f};
     glMaterialfv(GL_FRONT, GL_SPECULAR, ms);
     glMateriali(GL_FRONT, GL_SHININESS, 4);
@@ -355,11 +347,7 @@ int canMove(float nx, float nz){
            !isWall(worldToCell(nx+m),worldToCell(nz+m));
 }
 
-// ---------------------------------------------------------------------------
-// Planar Shadow
-// Projects the enemy billboard silhouette onto the floor (Y=0) using a fixed
-// overhead light position.
-// ---------------------------------------------------------------------------
+
 void drawPlanarShadow(float ex, float ez, float halfW, float spriteTopY) {
     const float lx = camX;
     const float ly = WALL_H * 0.9f;

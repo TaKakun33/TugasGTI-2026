@@ -4,5 +4,3 @@
 void drawPistol(bool shooting);
 void drawGunOverlay(int winW, int winH);
 void triggerShoot();
-
-// aaa

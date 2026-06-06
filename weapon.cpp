@@ -10,18 +10,16 @@ void drawPistol(bool shooting) {
 
     glPushMatrix();
 
-    // position the gun in bottom-right of view, pointing forward (into screen = -Z)
     glTranslatef(0.18f, -0.13f, -0.25f + recoilZ);
 
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // barrel of the gun
     glPushMatrix();
-        glTranslatef(0.0f, 0.01f, -0.09f); // shift forward
+        glTranslatef(0.0f, 0.01f, -0.09f); 
         glColor3f(0.25f, 0.25f, 0.25f);
-        glScalef(0.03f, 0.03f, 0.18f);     // thin, long in Z
+        glScalef(0.03f, 0.03f, 0.18f);     
         glutSolidCube(1.0f);
     glPopMatrix();
 
@@ -36,12 +34,12 @@ void drawPistol(bool shooting) {
     // grip?
     glPushMatrix();
         glTranslatef(0.0f, -0.055f, 0.06f);
-        glColor3f(0.22f, 0.15f, 0.10f);    // dark brown grip
+        glColor3f(0.22f, 0.15f, 0.10f);  
         glScalef(0.045f, 0.09f, 0.05f);
         glutSolidCube(1.0f);
     glPopMatrix();
 
-    // --- TRIGGER GUARD (small flat box) ---
+    // --- TRIGGER GUARD  ---
     glPushMatrix();
         glTranslatef(0.0f, -0.022f, 0.025f);
         glColor3f(0.20f, 0.20f, 0.20f);
@@ -52,7 +50,7 @@ void drawPistol(bool shooting) {
     // muzzle
     if (shooting && gunFrame < 3) {
         glPushMatrix();
-        glTranslatef(0.0f, 0.01f, -0.20f);   // at the tip of barrel
+        glTranslatef(0.0f, 0.01f, -0.20f);   
         glColor4f(1.0f, 0.75f, 0.1f, 0.9f);
         glScalef(0.06f, 0.06f, 0.06f);
         glutSolidSphere(1.0f, 6, 6);
@@ -83,7 +81,7 @@ void drawGunOverlay(int winW, int winH) {
     glLoadIdentity();
 
     glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST); // draw on top of everything
+    glDisable(GL_DEPTH_TEST); 
 
     bool isShooting = (gunFiring != 0) && (gunFrame < GUN_FIRE_FRAMES);
     drawPistol(isShooting);

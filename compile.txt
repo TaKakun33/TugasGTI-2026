@@ -1,12 +1,12 @@
 windows
-g++ -o maze3d.exe game.cpp enemy.cpp weapon.cpp renderer.cpp -lfreeglut -lglu32 -lopengl32 maze3d.exe
+g++ -o IGN.exe game.cpp enemy.cpp weapon.cpp renderer.cpp -lfreeglut -lglu32 -lopengl32 IGN.exe
 
 linux
-g++ -o maze3d game.cpp enemy.cpp weapon.cpp renderer.cpp lantern.cpp -lglut -lGLU -lGL -lm
-./maze3d
+g++ -o IGN game.cpp enemy.cpp weapon.cpp renderer.cpp lantern.cpp -lglut -lGLU -lGL -lm
+./IGN
 
 mac
-g++ -o maze3d game.cpp enemy.cpp weapon.cpp renderer.cpp -framework GLUT -framework OpenGL -framework Cocoa
-./maze3d
+g++ -o IGN game.cpp enemy.cpp weapon.cpp renderer.cpp -framework GLUT -framework OpenGL -framework Cocoa
+./IGN
 
-clang++ -std=c++17 -Wall -Wextra -O2 -o maze3d game.cpp enemy.cpp weapon.cpp renderer.cpp -framework GLUT -framework OpenGL -framework Cocoa
+clang++ -std=c++17 -Wall -Wextra -O2 -o IGN game.cpp enemy.cpp weapon.cpp renderer.cpp -framework GLUT -framework OpenGL -framework Cocoa

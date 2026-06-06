@@ -59,8 +59,8 @@ void updateEnemies() {
                 }
             } else {
                 e.state = ES_CHASE;
-                float nx = e.x + (dx/dist) * currentSpeed; // pake currentSpeed
-                float nz = e.z + (dz/dist) * currentSpeed; // pake currentSpeed
+                float nx = e.x + (dx/dist) * currentSpeed; 
+                float nz = e.z + (dz/dist) * currentSpeed; 
                 if (!isWall((int)(nx/CELL), (int)(nz/CELL)))
                     e.x = nx, e.z = nz;
             }

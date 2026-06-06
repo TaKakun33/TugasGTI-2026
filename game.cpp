@@ -29,21 +29,14 @@ bool lanternOn = true;
 bool keys[256] = {};
 Enemy enemies[MAX_ENEMIES];
 
-// -------------------------------------------------------
-// BSP Room Generator
-// Each BSP node holds a region of the map.
-// We recursively split regions, carve a room inside each
-// leaf, then connect sibling rooms with an L-shaped corridor.
-// -------------------------------------------------------
-
 struct Room {
-    int x, z, w, h;   // top-left corner + size (in map cells)
+    int x, z, w, h;  
     int cx() const { return x + w/2; }
     int cz() const { return z + h/2; }
 };
 
 struct BSPNode {
-    int x, z, w, h;        // region this node covers
+    int x, z, w, h;    
     BSPNode *left, *right;
     Room room;
     bool hasRoom;
@@ -55,8 +48,8 @@ struct BSPNode {
     ~BSPNode() { delete left; delete right; }
 };
 
-static const int MIN_REGION = 5;   // minimum region size before we stop splitting
-static const int MIN_ROOM   = 3;   // minimum room size (in cells)
+static const int MIN_REGION = 5;  
+static const int MIN_ROOM   = 3;  
 
 static void splitNode(BSPNode *node, int depth) {
     if (depth <= 0) return;
@@ -89,14 +82,11 @@ static void splitNode(BSPNode *node, int depth) {
 
 static void carveRoom(BSPNode *node) {
     if (node->left || node->right) {
-        // Internal node — recurse
         if (node->left)  carveRoom(node->left);
         if (node->right) carveRoom(node->right);
         return;
     }
 
-    // Leaf node — carve a room with random size inside the region
-    // Leave at least 1 cell border so rooms don't touch each other
     int maxW = node->w - 2;
     int maxH = node->h - 2;
     if (maxW < MIN_ROOM || maxH < MIN_ROOM) return;
@@ -106,7 +96,6 @@ static void carveRoom(BSPNode *node) {
     int rx = node->x + 1 + rand() % (node->w - rw - 1);
     int rz = node->z + 1 + rand() % (node->h - rh - 1);
 
-    // Clamp to map bounds
     rx = std::max(1, std::min(rx, MAP_W - rw - 1));
     rz = std::max(1, std::min(rz, MAP_H - rh - 1));
     rw = std::min(rw, MAP_W - rx - 1);
@@ -120,7 +109,6 @@ static void carveRoom(BSPNode *node) {
     node->hasRoom = true;
 }
 
-// Get the "center room" of a subtree (used for corridor connection)
 static Room getRoom(BSPNode *node) {
     if (node->hasRoom) return node->room;
     if (node->left && node->right) {
@@ -132,15 +120,11 @@ static Room getRoom(BSPNode *node) {
     return getRoom(node->right);
 }
 
-// Carve an L-shaped corridor between two points
 static void carveCorridor(int x1, int z1, int x2, int z2) {
-    // Horizontal then vertical (or vice versa randomly)
     if (rand() % 2 == 0) {
-        // Go horizontal first
         int minX = std::min(x1, x2), maxX = std::max(x1, x2);
         for (int x = minX; x <= maxX; x++) {
             MAP[z1][x] = 0;
-            // Make corridors 2 wide so they feel less cramped
             if (z1 + 1 < MAP_H - 1) MAP[z1+1][x] = 0;
         }
         int minZ = std::min(z1, z2), maxZ = std::max(z1, z2);
@@ -149,7 +133,6 @@ static void carveCorridor(int x1, int z1, int x2, int z2) {
             if (x2 + 1 < MAP_W - 1) MAP[z][x2+1] = 0;
         }
     } else {
-        // Go vertical first
         int minZ = std::min(z1, z2), maxZ = std::max(z1, z2);
         for (int z = minZ; z <= maxZ; z++) {
             MAP[z][x1] = 0;
@@ -174,11 +157,7 @@ static void connectRooms(BSPNode *node) {
     carveCorridor(l.cx(), l.cz(), r.cx(), r.cz());
 }
 
-// ---------------------------------------------------------------------------
-// Flood fill: returns a 2D array marking all floor cells reachable from (sx,sz)
-// ---------------------------------------------------------------------------
 static void floodFill(int sx, int sz, bool visited[MAP_H][MAP_W]) {
-    // Iterative BFS to avoid stack overflow on large maps
     int qx[MAP_W * MAP_H], qz[MAP_W * MAP_H];
     int head = 0, tail = 0;
     qx[tail] = sx; qz[tail] = sz; tail++;
@@ -198,32 +177,22 @@ static void floodFill(int sx, int sz, bool visited[MAP_H][MAP_W]) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// After BSP generation, ensure ALL open floor cells are reachable from the
-// player start cell (1,1).  Any disconnected open region gets a straight
-// corridor carved to the nearest already-connected open cell.
-// ---------------------------------------------------------------------------
 static void ensureConnectivity() {
-    // Guarantee player start is always open first
     MAP[1][1] = 0; MAP[1][2] = 0;
     MAP[2][1] = 0; MAP[2][2] = 0;
 
-    // Keep carving corridors until nothing is unreachable
-    // (one pass is usually enough; the loop handles pathological cases)
     for (int pass = 0; pass < MAP_W * MAP_H; pass++) {
         bool visited[MAP_H][MAP_W] = {};
         floodFill(1, 1, visited);
 
-        // Find first unreachable open cell
         int ux = -1, uz = -1;
         for (int z = 1; z < MAP_H - 1 && ux < 0; z++)
             for (int x = 1; x < MAP_W - 1 && ux < 0; x++)
                 if (MAP[z][x] == 0 && !visited[z][x])
                     { ux = x; uz = z; }
 
-        if (ux < 0) break; // everything connected — done
+        if (ux < 0) break;
 
-        // Find nearest connected open cell to (ux, uz)
         int bestX = 1, bestZ = 1, bestDist = 999999;
         for (int z = 1; z < MAP_H - 1; z++)
             for (int x = 1; x < MAP_W - 1; x++) {
@@ -232,37 +201,29 @@ static void ensureConnectivity() {
                 if (dist < bestDist) { bestDist = dist; bestX = x; bestZ = z; }
             }
 
-        // Carve an L-shaped corridor from (ux,uz) to (bestX,bestZ)
-        // Horizontal leg first
         int x1 = std::min(ux, bestX), x2 = std::max(ux, bestX);
         for (int x = x1; x <= x2; x++) MAP[uz][x] = 0;
-        // Vertical leg
         int z1 = std::min(uz, bestZ), z2 = std::max(uz, bestZ);
         for (int z = z1; z <= z2; z++) MAP[z][bestX] = 0;
     }
 }
 
 static void generateMap() {
-    // Fill everything with walls
     for (int z = 0; z < MAP_H; z++)
         for (int x = 0; x < MAP_W; x++)
             MAP[z][x] = 1;
 
-    // Build BSP tree over the interior (leave border walls)
     BSPNode *root = new BSPNode(1, 1, MAP_W - 2, MAP_H - 2);
-    splitNode(root, 4);   // depth 4 = up to 16 rooms on a 17x17 map
+    splitNode(root, 4);   
     carveRoom(root);
     connectRooms(root);
     delete root;
 
-    // Always enforce solid border
     for (int x = 0; x < MAP_W; x++) MAP[0][x] = MAP[MAP_H-1][x] = 1;
     for (int z = 0; z < MAP_H; z++) MAP[z][0] = MAP[z][MAP_W-1] = 1;
 
-    // Guarantee player start is open AND every floor cell is reachable
     ensureConnectivity();
 
-    // Re-enforce border after corridor carving (safety)
     for (int x = 0; x < MAP_W; x++) MAP[0][x] = MAP[MAP_H-1][x] = 1;
     for (int z = 0; z < MAP_H; z++) MAP[z][0] = MAP[z][MAP_W-1] = 1;
 }
@@ -316,50 +277,39 @@ void resetGame() {
 }
 
 void display() {
-    // Latar belakang: Hitam pekat jika senter mati, Coklat gelap jika senter nyala
-    // Ini mencegah adanya "cahaya langit" palsu
     if (lanternOn) {
-        glClearColor(0.05f, 0.04f, 0.03f, 1.0f); // Coklat sangat gelap
+        glClearColor(0.05f, 0.04f, 0.03f, 1.0f); 
     } else {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);     // HITAM TOTAL
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);   \
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, WIN_W, WIN_H);
 
-    //setPerspectiveView(WIN_W, WIN_H);
-    //setupLighting();
-
-
 setPerspectiveView(WIN_W, WIN_H);
 
-// === LIGHTING BARU - HAPUS YANG LAMA ===
 glEnable(GL_LIGHTING);
 glEnable(GL_NORMALIZE);
 if (!lanternOn) {
-    // MATI TOTAL
     glDisable(GL_LIGHT0);
     GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, black);
 } else {
-    // BIARKAN lantern.cpp yang nyalain GL_LIGHT0
-    // kasih ambient super kecil biar gak flat black
     GLfloat dark[] = {0.02f, 0.02f, 0.02f, 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, dark);
 }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_FOG);
     
-    // Fog juga harus mengikuti kondisi senter agar tidak bocor cahaya
     GLfloat fogC[4];
     if (lanternOn) {
         fogC[0] = 0.0f; fogC[1] = 0.0f; fogC[2] = 0.0f; fogC[3] = 1.0f;
         glFogf(GL_FOG_START, 3.0f);
-        glFogf(GL_FOG_END, 12.0f); // Jarak pandang lebih jauh saat senter nyala
+        glFogf(GL_FOG_END, 12.0f); 
     } else {
         fogC[0] = 0.0f; fogC[1] = 0.0f; fogC[2] = 0.0f; fogC[3] = 1.0f;
         glFogf(GL_FOG_START, 0.5f);
-        glFogf(GL_FOG_END, 2.0f);  // Jarak pandang sangat pendek saat mati (opsional, biar makin serem)
+        glFogf(GL_FOG_END, 2.0f);  
     }
     
     glFogfv(GL_FOG_COLOR, fogC);
@@ -421,7 +371,7 @@ int main(int argc, char **argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(960, 600);
-    glutCreateWindow("Maze 3D");
+    glutCreateWindow("Imagine Getting Noclipped");
 
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
