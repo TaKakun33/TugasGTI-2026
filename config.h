@@ -20,10 +20,10 @@
 #include <algorithm>
 
 // map & world constants
-#define MAP_W 17
-#define MAP_H 17
-#define CELL  2.0f
-#define WALL_H 2.4f
+#define MAP_W 50
+#define MAP_H 50
+#define CELL  2.5f
+#define WALL_H 3.0f
 #define PI 3.14159265f
 #define DEG2RAD(x) ((x) * PI / 180.0f)
 
@@ -32,12 +32,12 @@
 #define GUN_COOLDOWN_MAX 15
 
 // enemy constants
-#define MAX_ENEMIES 10
+#define MAX_ENEMIES 20
 #define ENEMY_HP_MAX 3
-#define ENEMY_SPEED 0.022f
-#define ENEMY_SIGHT 8.0f
-#define ENEMY_ATTACK_RANGE 1.4f
-#define ENEMY_ATTACK_COOLDOWN 60
+#define ENEMY_SPEED 0.15f
+#define ENEMY_SIGHT 10.0f
+#define ENEMY_ATTACK_RANGE 0.5f
+#define ENEMY_ATTACK_COOLDOWN 120
 
 // map declaration - no longer const, gets regenerated each game
 extern int MAP[MAP_H][MAP_W];
