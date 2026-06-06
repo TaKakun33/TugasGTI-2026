@@ -44,8 +44,7 @@ void updateEnemies() {
 
         float dx = camX - e.x, dz = camZ - e.z;
         float dist = std::sqrtf(dx*dx + dz*dz);
-
-        // === SPEED DINAMIS ===
+        
         float currentSpeed = ENEMY_SPEED;
 
         if (dist < ENEMY_SIGHT && hasLineOfSight(e.x, e.z, camX, camZ)) {
@@ -114,13 +113,11 @@ void drawEnemy(const Enemy &e) {
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Calculate alpha for death fade
+    
     float alpha = 1.0f;
     if (e.state == ES_DEAD && e.deathTimer > 1.0f)
         alpha = 1.0f - (e.deathTimer - 1.0f);
 
-    // Tint color based on enemy state (multiplied with texture)
     float flash = (e.flashTimer > 0) ? e.flashTimer : 0.0f;
     if (e.state == ES_DEAD)
         glColor4f(0.8f, 0.3f, 0.3f, alpha);
@@ -131,7 +128,6 @@ void drawEnemy(const Enemy &e) {
     else
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f); // idle: full texture color, no tint
 
-    // Draw textured sprite
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, textures[TEX_ENEMY]);
     glBegin(GL_QUADS);
@@ -142,13 +138,11 @@ void drawEnemy(const Enemy &e) {
     glEnd();
     glDisable(GL_TEXTURE_2D);
 
-    // HP bar (only when alive)
     if (e.state != ES_DEAD) {
         float barY = topY + 0.18f;
         float barW = halfW * 0.9f;
         float hpR  = (float)e.hp / ENEMY_HP_MAX;
 
-        // Background
         glColor4f(0.4f, 0.05f, 0.05f, 0.85f);
         glBegin(GL_QUADS);
             glVertex3f(e.x-rx*barW,    barY,         e.z-rz*barW);
@@ -157,7 +151,7 @@ void drawEnemy(const Enemy &e) {
             glVertex3f(e.x-rx*barW,    barY+0.09f,   e.z-rz*barW);
         glEnd();
 
-        // Filled portion
+    
         float filledW = barW*2.0f*hpR - barW;
         glColor4f(1.0f-hpR, hpR, 0.0f, 0.9f);
         glBegin(GL_QUADS);
@@ -176,7 +170,7 @@ void drawEnemy(const Enemy &e) {
 void drawAllEnemies() {
     int order[MAX_ENEMIES];
     for (int i = 0; i < MAX_ENEMIES; i++) order[i] = i;
-    // Sort back-to-front for correct transparency
+    
     for (int i = 0; i < MAX_ENEMIES-1; i++)
     for (int j = i+1; j < MAX_ENEMIES; j++) {
         float d1 = (camX-enemies[order[i]].x)*(camX-enemies[order[i]].x)
